@@ -1,0 +1,6 @@
+DatasetKagle/
+*.pth
+*.npy
+*.jpg
+*.jpeg
+*.png
