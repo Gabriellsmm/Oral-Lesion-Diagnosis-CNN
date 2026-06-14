@@ -2,7 +2,7 @@
 
 > **Authors:** Gabriel Lucas S. Moura & Felipe D. Cunha  
 > **Institution:** Department of Computer Science, PUC Minas — Belo Horizonte, Brazil  
-> **Contact:** gabriel.moura.1560920@sga.pucminas.br · felipe@pucminas.br
+> **Contact:** gl81922@gmail.com · felipe@pucminas.br
 
 ---
 
