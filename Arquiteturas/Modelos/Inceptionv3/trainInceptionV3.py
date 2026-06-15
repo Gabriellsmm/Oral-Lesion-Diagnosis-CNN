@@ -19,7 +19,8 @@ LR         = 0.001
 
 train1_dir = "../../../DatasetKagle/train1"
 test_dir   = "../../../DatasetKagle/teste"
-classes    = ["CANCER", "NON CANCER"]
+save_dir   = "/content/drive/MyDrive/Colab Notebooks/DatasetKagle/modelos_inceptionv3"
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
@@ -40,7 +41,6 @@ test_transform = transforms.Compose([
 ])
 
 def set_seed(seed):
-    # Fix all random sources for reproducibility
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -49,8 +49,12 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+# Detect classes from test folder structure
+test_dataset_ref = torchvision.datasets.ImageFolder(root=test_dir, transform=test_transform)
+classes = test_dataset_ref.classes
+print(f"Detected classes: {classes}")
+
 def get_model():
-    # Load pretrained Inception-V3 and replace the classifier head
     weights = Inception_V3_Weights.DEFAULT
     net = inception_v3(weights=weights)
     net.aux_logits = False
@@ -67,7 +71,6 @@ for run_idx, seed in enumerate(SEEDS):
 
     set_seed(seed)
 
-    # DataLoaders recreated at each run
     train_dataset = ConcatDataset([
         torchvision.datasets.ImageFolder(root=train1_dir, transform=train_transform)
     ])
@@ -76,7 +79,6 @@ for run_idx, seed in enumerate(SEEDS):
     trainloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True,  num_workers=4)
     testloader  = DataLoader(test_dataset,  batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
 
-    # Model, criterion and optimizer reinitialized at each run
     net       = get_model()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters(), lr=LR)
@@ -99,7 +101,7 @@ for run_idx, seed in enumerate(SEEDS):
 
     print(f"  Training Run {run_idx + 1} finished.")
 
-    # Evaluation and ROC curve computation
+    # Evaluation
     net.eval()
     y_true, y_pred = [], []
     all_labels, all_probs = [], []
@@ -120,13 +122,12 @@ for run_idx, seed in enumerate(SEEDS):
     all_labels = np.array(all_labels)
     all_probs  = np.array(all_probs)
 
-    # Compute metrics for the CANCER class
     report = classification_report(y_true, y_pred, target_names=classes,
                                    digits=4, output_dict=True)
     acc  = np.mean(y_true == y_pred) * 100
-    prec = report["CANCER"]["precision"] * 100
-    sens = report["CANCER"]["recall"]    * 100
-    f1   = report["CANCER"]["f1-score"]  * 100
+    prec = report[classes[0]]["precision"] * 100
+    sens = report[classes[0]]["recall"]    * 100
+    f1   = report[classes[0]]["f1-score"]  * 100
 
     print(f"\n  Run {run_idx + 1} Results:")
     print(f"    Accuracy:    {acc:.2f}%")
@@ -136,7 +137,7 @@ for run_idx, seed in enumerate(SEEDS):
 
     all_results.append({"seed": seed, "acc": acc, "prec": prec, "sens": sens, "f1": f1})
 
-    # Compute and save ROC curve data
+    # ROC curve
     fpr, tpr, _ = roc_curve(all_labels, all_probs)
     roc_auc     = auc(fpr, tpr)
     print(f"    AUC: {roc_auc:.4f}")
@@ -148,17 +149,22 @@ for run_idx, seed in enumerate(SEEDS):
     torch.save(net.state_dict(), f"inceptionv3_run{run_idx + 1}_seed{seed}.pth")
     print(f"  Model saved: inceptionv3_run{run_idx + 1}_seed{seed}.pth")
 
-# Final summary across all runs
+# Final summary
 print(f"\n{'='*60}")
 print("  FINAL SUMMARY — Mean ± Std Dev (3 runs)")
 print(f"{'='*60}")
 
-metrics      = ["acc",      "prec",      "sens",          "f1"]
-labels_print = ["Accuracy", "Precision", "Sensitivity",   "F1-Score"]
+metrics      = ["acc",      "prec",      "sens",        "f1"]
+labels_print = ["Accuracy", "Precision", "Sensitivity", "F1-Score"]
 
 summary = {}
 for m, lbl in zip(metrics, labels_print):
-    values       = [r[m] for r in all_results]
-    mean, std    = np.mean(values), np.std(values)
-    summary[m]   = (mean, std)
+    values     = [r[m] for r in all_results]
+    mean, std  = np.mean(values), np.std(values)
+    summary[m] = (mean, std)
     print(f"  {lbl:<14}: {mean:.2f} ± {std:.2f}%")
+
+print(f"\n  (For the paper: Acc {summary['acc'][0]:.2f}±{summary['acc'][1]:.2f}, "
+      f"Prec {summary['prec'][0]:.2f}±{summary['prec'][1]:.2f}, "
+      f"Sens {summary['sens'][0]:.2f}±{summary['sens'][1]:.2f}, "
+      f"F1 {summary['f1'][0]:.2f}±{summary['f1'][1]:.2f})")
