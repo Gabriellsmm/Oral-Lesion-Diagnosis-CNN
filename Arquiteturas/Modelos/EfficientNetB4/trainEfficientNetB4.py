@@ -18,8 +18,8 @@ NUM_EPOCHS = 10
 BATCH_SIZE = 8
 LR         = 0.001
 
-train1_dir = "/content/drive/MyDrive/Colab Notebooks/DatasetKagle/train1"
-test_dir   = "/content/drive/MyDrive/Colab Notebooks/DatasetKagle/teste"
+train1_dir = "../../../DatasetKagle/train1"
+test_dir   = "../../../DatasetKagle/teste"
 save_dir   = "/content/drive/MyDrive/Colab Notebooks/DatasetKagle/modelos_efficientnetb4"
 
 os.makedirs(save_dir, exist_ok=True)
