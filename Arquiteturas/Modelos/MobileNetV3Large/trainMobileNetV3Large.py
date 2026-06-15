@@ -19,7 +19,7 @@ LR         = 0.001
 
 train1_dir = "../../../DatasetKagle/train1"
 test_dir   = "../../../DatasetKagle/teste"
-save_dir   = "/content/drive/MyDrive/Colab Notebooks/DatasetKagle/modelos_efficientnetb4"
+save_dir   = "/content/drive/MyDrive/Colab Notebooks/DatasetKagle/modelos_mobilenetv3large"
 
 os.makedirs(save_dir, exist_ok=True)
 
